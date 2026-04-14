@@ -59,8 +59,10 @@ export function PortfolioChart({ accRows, decRows, fireAge, pillarUnlockAge, ahv
           width={56}
         />
         <Tooltip
-          formatter={(value: number) =>
-            value.toLocaleString('fr-CH', { style: 'currency', currency: 'CHF', maximumFractionDigits: 0 })
+          formatter={(value) =>
+            typeof value === 'number'
+              ? value.toLocaleString('fr-CH', { style: 'currency', currency: 'CHF', maximumFractionDigits: 0 })
+              : value
           }
           labelFormatter={(label) => `Age ${label}`}
         />
