@@ -1,0 +1,64 @@
+export interface AccumulationInputs {
+  initialCapital: number;       // CHF
+  yearlySavings: number;        // CHF/year
+  returnRate: number;           // e.g. 0.06
+  ageNow: number;
+  ageFire: number;              // determines horizon = ageFire - ageNow
+  pillarContribution: number;   // CHF/year (2nd pillar)
+  pillarRate: number;           // e.g. 0.015
+  ageRetirement: number;        // 2nd pillar unlock age (e.g. 65)
+  initialPillar: number;        // current 2nd pillar balance
+}
+
+export interface AccumulationRow {
+  year: number;         // year index starting at 1
+  age: number;
+  portfolio: number;
+  pillar: number;
+  totalWealth: number;
+  totalInvested: number;
+  totalGain: number;
+}
+
+export interface AccumulationResult {
+  rows: AccumulationRow[];
+  portfolioAtFire: number;
+  pillarAtFire: number;
+  totalWealthAtFire: number;
+}
+
+export interface DecumulationInputs {
+  startingPortfolio: number;    // fed from Phase 1
+  pillarLumpSum: number;        // fed from Phase 1
+  pillarUnlockYear: number;     // ageFire to ageRetirement delta, e.g. 16
+  ageFire: number;
+  // AHV/AVS
+  ahvAnnual: number;            // CHF/year, 0 if not modeled
+  ahvUnlockYear: number;        // ageFire to 65 delta
+  // Spend & rates
+  annualBudget: number;         // CHF/year (initial)
+  returnRate: number;           // e.g. 0.04
+  inflationRate: number;        // e.g. 0.02
+  inflationAdjust: boolean;
+  flatMode: boolean;            // 0% return, 0% inflation
+  maxYears: number;             // safety cap, e.g. 60
+}
+
+export interface DecumulationRow {
+  year: number;
+  age: number;               // end-of-year age
+  totalBudget: number;       // target spend (before AHV offset)
+  portfolioDraw: number;     // actual draw from portfolio (totalBudget - ahvOffset)
+  portfolioStart: number;    // portfolio after lump sums added, before growth/withdrawal
+  portfolioEnd: number;
+  withdrawalRate: number;    // portfolioDraw / portfolioStart
+  note: string;              // "drawing" | "2P unlocked" | "AHV starts" | "depleted"
+}
+
+export interface DecumulationResult {
+  rows: DecumulationRow[];
+  initialWithdrawalRate: number;
+  withdrawalRateAfterPillar: number | null;
+  withdrawalRateAfterAhv: number | null;
+  longevityYears: number | null;   // null = never depleted within maxYears
+}
