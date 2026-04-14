@@ -42,10 +42,6 @@ export default function App() {
 
   const decResult = simulateDecumulation(decInputs);
 
-  // Chart preview uses at least the retirement duration (minimum 60 for readability)
-  const previewDecInputs = { ...decInputs, maxYears: Math.max(decConfig.retirementDuration, 60) };
-  const previewDecResult = simulateDecumulation(previewDecInputs);
-
   // ── URL: clear params on mount if none present (clean initial state) ──────
   useEffect(() => {
     const url = new URL(window.location.href);
@@ -134,7 +130,7 @@ export default function App() {
           <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Portfolio Overview</h2>
           <PortfolioChart
             accRows={accResult.rows}
-            decRows={previewDecResult.rows}
+            decRows={decResult.rows}
             fireAge={accInputs.ageFire}
             pillarUnlockAge={accInputs.ageRetirement}
             ahvUnlockAge={65}
