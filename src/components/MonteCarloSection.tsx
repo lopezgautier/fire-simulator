@@ -3,6 +3,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine, ResponsiveContainer,
 } from 'recharts';
 import type { MCResult, HistoricalSimLine } from '../lib/types';
+import { InfoTooltip } from './InfoTooltip';
 
 interface Props {
   result: MCResult;
@@ -48,8 +49,9 @@ export function MonteCarloSection({
       {/* Summary cards */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div className={`rounded-xl border p-4 ${srBg}`}>
-          <div className="text-xs text-gray-500 font-medium uppercase tracking-wide mb-1">
+          <div className="text-xs text-gray-500 font-medium uppercase tracking-wide mb-1 flex items-center">
             Success Rate
+            <InfoTooltip text="The percentage of the 500 simulated scenarios where the portfolio is still positive at your target age. 90%+ is considered robust; below 75% suggests significant depletion risk." />
           </div>
           <div className={`text-2xl font-bold ${srColor}`}>
             {(successRate * 100).toFixed(0)}%

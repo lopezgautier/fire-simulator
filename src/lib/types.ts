@@ -75,6 +75,7 @@ export interface DecConfig {
   inflationAdjust: boolean;
   flatMode: boolean;
   ahvMonthly: number;
+  retirementDuration: number; // years to simulate, e.g. 45
 }
 
 // ─── Scenario snapshots ───────────────────────────────────────────────────────

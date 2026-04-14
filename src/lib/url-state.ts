@@ -8,7 +8,7 @@ const DEFAULT_ACC: AccumulationInputs = {
 
 const DEFAULT_DEC: DecConfig = {
   annualBudget: 80_000, returnRate: 0.04, inflationRate: 0.02,
-  inflationAdjust: false, flatMode: false, ahvMonthly: 0,
+  inflationAdjust: false, flatMode: false, ahvMonthly: 0, retirementDuration: 45,
 };
 
 export function encodeState(acc: AccumulationInputs, dec: DecConfig): string {
@@ -28,6 +28,7 @@ export function encodeState(acc: AccumulationInputs, dec: DecConfig): string {
     ia: dec.inflationAdjust ? '1' : '0',
     fm: dec.flatMode ? '1' : '0',
     ahv: String(dec.ahvMonthly),
+    rd: String(dec.retirementDuration),
   });
   return `${window.location.origin}${window.location.pathname}?${p.toString()}`;
 }
@@ -62,6 +63,7 @@ export function decodeState(): { acc: AccumulationInputs; dec: DecConfig } | nul
       inflationAdjust: b('ia', DEFAULT_DEC.inflationAdjust),
       flatMode: b('fm', DEFAULT_DEC.flatMode),
       ahvMonthly: n('ahv', DEFAULT_DEC.ahvMonthly),
+      retirementDuration: n('rd', DEFAULT_DEC.retirementDuration),
     },
   };
 }

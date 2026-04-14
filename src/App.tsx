@@ -37,13 +37,13 @@ export default function App() {
     inflationRate: decConfig.inflationRate,
     inflationAdjust: decConfig.inflationAdjust,
     flatMode: decConfig.flatMode,
-    maxYears: 60,
+    maxYears: decConfig.retirementDuration,
   };
 
   const decResult = simulateDecumulation(decInputs);
 
-  // Chart preview dec (same inputs, 80 year horizon)
-  const previewDecInputs = { ...decInputs, maxYears: 80 };
+  // Chart preview uses at least the retirement duration (minimum 60 for readability)
+  const previewDecInputs = { ...decInputs, maxYears: Math.max(decConfig.retirementDuration, 60) };
   const previewDecResult = simulateDecumulation(previewDecInputs);
 
   // ── URL: clear params on mount if none present (clean initial state) ──────

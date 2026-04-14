@@ -8,6 +8,7 @@ import { HISTORICAL_SEQUENCES, runHistoricalSim } from '../lib/historical-sequen
 import { findSafeBudget } from '../lib/swr-backsolver';
 import type { HistoricalSimLine, SWRResult } from '../lib/types';
 import { downloadCsv, decumulationCsv } from '../lib/csv-export';
+import { InfoTooltip } from './InfoTooltip';
 
 const fmt = (n: number) =>
   n.toLocaleString('fr-CH', { style: 'currency', currency: 'CHF', maximumFractionDigits: 0 });
@@ -105,6 +106,7 @@ export function DecumulationPanel({
         <InputField label="Portfolio Return (nominal)" value={config.returnRate * 100} onChange={v => set('returnRate')(v / 100)} suffix="%" step={0.1} decimals={1} />
         <InputField label="Inflation Rate" value={config.inflationRate * 100} onChange={v => set('inflationRate')(v / 100)} suffix="%" step={0.1} decimals={1} />
         <InputField label="AHV / AVS Monthly" value={config.ahvMonthly} onChange={v => set('ahvMonthly')(v)} prefix="CHF" step={100} decimals={0} />
+        <InputField label="Retirement Duration" value={config.retirementDuration} onChange={v => set('retirementDuration')(v)} suffix="yrs" step={5} decimals={0} />
       </div>
 
       {/* Toggles */}
@@ -115,7 +117,12 @@ export function DecumulationPanel({
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Card label="Initial WR" value={pct(decResult.initialWithdrawalRate)} color="orange" />
+        <CardWithTooltip
+          label="Initial WR"
+          tooltip="Withdrawal Rate: the share of your portfolio drawn in year 1 of retirement. Calculated as portfolio draw ÷ start-of-year portfolio value. A common rule of thumb targets ≤ 4%."
+          value={pct(decResult.initialWithdrawalRate)}
+          color="orange"
+        />
         <Card
           label="WR after 2P unlock"
           value={decResult.withdrawalRateAfterPillar !== null ? pct(decResult.withdrawalRateAfterPillar) : '—'}
@@ -140,7 +147,10 @@ export function DecumulationPanel({
       {/* Monte Carlo stress test */}
       <div className="border border-gray-200 rounded-xl p-4 flex flex-col gap-4">
         <div className="flex items-center justify-between flex-wrap gap-3">
-          <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Monte Carlo Stress Test</h3>
+          <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide flex items-center">
+            Monte Carlo Stress Test
+            <InfoTooltip text="Runs 500 simulations where each year's portfolio return is drawn randomly from a normal distribution centred on your expected return, with the volatility (σ) you set. The spread of outcomes shows how much sequence-of-returns risk affects your plan." />
+          </h3>
           <button
             onClick={handleRunMC}
             disabled={mcRunning}
@@ -184,6 +194,10 @@ export function DecumulationPanel({
 
         {/* SWR Back-solver */}
         <div className="border-t border-gray-100 pt-4 flex flex-col gap-3">
+          <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide flex items-center">
+            Safe Withdrawal Rate Solver
+            <InfoTooltip text="Binary-searches the highest annual budget that still achieves your target success rate, using the same volatility and horizon as the stress test above. The result is read-only — it does not change your budget input." />
+          </p>
           <div className="flex items-end gap-3 flex-wrap">
             <div className="w-44">
               <InputField
@@ -312,6 +326,18 @@ function Card({ label, value, sub, color }: CardProps) {
   return (
     <div className={`rounded-xl border p-4 ${colors[color]}`}>
       <div className="text-xs text-gray-500 font-medium uppercase tracking-wide mb-1">{label}</div>
+      <div className={`text-lg font-bold ${valueColors[color]}`}>{value}</div>
+      {sub && <div className="text-xs text-gray-400 mt-0.5">{sub}</div>}
+    </div>
+  );
+}
+
+function CardWithTooltip({ label, tooltip, value, sub, color }: CardProps & { tooltip: string }) {
+  return (
+    <div className={`rounded-xl border p-4 ${colors[color]}`}>
+      <div className="text-xs text-gray-500 font-medium uppercase tracking-wide mb-1 flex items-center">
+        {label}<InfoTooltip text={tooltip} />
+      </div>
       <div className={`text-lg font-bold ${valueColors[color]}`}>{value}</div>
       {sub && <div className="text-xs text-gray-400 mt-0.5">{sub}</div>}
     </div>

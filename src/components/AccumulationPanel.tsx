@@ -3,6 +3,7 @@ import { InputField } from './InputField';
 import { AccumulationTable } from './YearTable';
 import { downloadCsv, accumulationCsv } from '../lib/csv-export';
 import { computeCoastFire } from '../lib/coast-fire';
+import { InfoTooltip } from './InfoTooltip';
 
 const fmt = (n: number) =>
   n.toLocaleString('fr-CH', { style: 'currency', currency: 'CHF', maximumFractionDigits: 0 });
@@ -47,7 +48,10 @@ export function AccumulationPanel({ inputs, onInputsChange, result }: Props) {
 
       {/* Coast FIRE */}
       <div className="border border-sky-100 rounded-xl p-4 bg-sky-50 flex flex-col gap-3">
-        <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Coast FIRE</h3>
+        <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide flex items-center">
+          Coast FIRE
+          <InfoTooltip text="The portfolio value you need right now so that, with zero further contributions, compound growth alone carries you to your FIRE target. Once you hit the coast number you can stop saving — time does the rest." />
+        </h3>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <Card
             label="Coast Number"
