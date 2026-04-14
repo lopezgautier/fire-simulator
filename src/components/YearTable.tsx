@@ -3,7 +3,7 @@ import type { AccumulationRow, DecumulationRow } from '../lib/types';
 const fmt = (n: number) =>
   n.toLocaleString('fr-CH', { style: 'currency', currency: 'CHF', maximumFractionDigits: 0 });
 
-const pct = (n: number) => (n * 100).toFixed(1) + '%';
+const pct = (n: number) => (n * 100).toFixed(2) + '%';
 
 interface AccTableProps {
   rows: AccumulationRow[];

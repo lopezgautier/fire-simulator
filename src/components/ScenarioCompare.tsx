@@ -2,7 +2,8 @@ import type { SavedScenario, AccumulationInputs, DecConfig } from '../lib/types'
 
 const fmt = (n: number) =>
   n.toLocaleString('fr-CH', { style: 'currency', currency: 'CHF', maximumFractionDigits: 0 });
-const pct = (n: number) => (n * 100).toFixed(1) + '%';
+const pct = (n: number) => (n * 100).toFixed(2) + '%';
+const pctSuccess = (n: number) => (n * 100).toFixed(1) + '%';
 const lon = (y: number | null) => (y === null ? '50+ yrs' : `${y} yrs`);
 
 export interface CurrentSnapshot {
@@ -54,7 +55,7 @@ export function ScenarioCompare({ current, saved, onLoad, onDelete }: Props) {
               <td className="py-3 pr-4 text-right">
                 {current.successRate !== null ? (
                   <span className={`font-semibold ${current.successRate >= 0.9 ? 'text-emerald-600' : current.successRate >= 0.75 ? 'text-amber-600' : 'text-red-600'}`}>
-                    {pct(current.successRate)}
+                    {pctSuccess(current.successRate)}
                   </span>
                 ) : '—'}
               </td>
@@ -78,7 +79,7 @@ export function ScenarioCompare({ current, saved, onLoad, onDelete }: Props) {
                 <td className="py-3 pr-4 text-right">
                   {s.successRate !== null ? (
                     <span className={`font-semibold ${s.successRate >= 0.9 ? 'text-emerald-600' : s.successRate >= 0.75 ? 'text-amber-600' : 'text-red-600'}`}>
-                      {pct(s.successRate)}
+                      {pctSuccess(s.successRate)}
                     </span>
                   ) : <span className="text-gray-400">—</span>}
                 </td>
