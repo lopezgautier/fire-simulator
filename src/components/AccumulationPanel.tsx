@@ -1,39 +1,22 @@
-import { useState } from 'react';
 import type { AccumulationInputs, AccumulationResult } from '../lib/types';
-import { simulateAccumulation } from '../lib/simulate-accumulation';
 import { InputField } from './InputField';
 import { AccumulationTable } from './YearTable';
-
-const DEFAULTS: AccumulationInputs = {
-  initialCapital: 350_000,
-  yearlySavings: 66_000,
-  returnRate: 0.06,
-  ageNow: 32,
-  ageFire: 49,
-  pillarContribution: 10_200,
-  pillarRate: 0.015,
-  ageRetirement: 65,
-  initialPillar: 0,
-};
+import { downloadCsv, accumulationCsv } from '../lib/csv-export';
 
 const fmt = (n: number) =>
   n.toLocaleString('fr-CH', { style: 'currency', currency: 'CHF', maximumFractionDigits: 0 });
 
 interface Props {
-  onResult: (result: AccumulationResult, inputs: AccumulationInputs) => void;
+  inputs: AccumulationInputs;
+  onInputsChange: (inputs: AccumulationInputs) => void;
+  result: AccumulationResult;
 }
 
-export function AccumulationPanel({ onResult }: Props) {
-  const [inputs, setInputs] = useState<AccumulationInputs>(DEFAULTS);
-
+export function AccumulationPanel({ inputs, onInputsChange, result }: Props) {
   const set = (key: keyof AccumulationInputs) => (value: number) => {
-    const updated = { ...inputs, [key]: value };
-    setInputs(updated);
-    const result = simulateAccumulation(updated);
-    onResult(result, updated);
+    onInputsChange({ ...inputs, [key]: value });
   };
 
-  const result = simulateAccumulation(inputs);
   const horizon = inputs.ageFire - inputs.ageNow;
 
   return (
@@ -59,12 +42,20 @@ export function AccumulationPanel({ onResult }: Props) {
         <Card label="Total Wealth at FIRE" value={fmt(result.totalWealthAtFire)} color="emerald" />
       </div>
 
-      {/* Table */}
+      {/* Table + CSV export */}
       {result.rows.length > 0 && (
         <details open>
-          <summary className="cursor-pointer text-sm font-medium text-gray-500 hover:text-gray-800 mb-3">
-            Year-by-year table
+          <summary className="cursor-pointer text-sm font-medium text-gray-500 hover:text-gray-800 mb-3 flex items-center justify-between">
+            <span>Year-by-year table</span>
           </summary>
+          <div className="flex justify-end mb-2">
+            <button
+              onClick={() => downloadCsv(accumulationCsv(result.rows), 'accumulation.csv')}
+              className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 shadow-sm transition-colors"
+            >
+              Export CSV
+            </button>
+          </div>
           <AccumulationTable rows={result.rows} />
         </details>
       )}

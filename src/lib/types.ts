@@ -65,3 +65,47 @@ export interface DecumulationResult {
   withdrawalRateAfterAhv: number | null;
   longevityYears: number | null;   // null = never depleted within maxYears
 }
+
+// ─── Decumulation config (lifted to App so URL + scenarios can access it) ────
+
+export interface DecConfig {
+  annualBudget: number;
+  returnRate: number;
+  inflationRate: number;
+  inflationAdjust: boolean;
+  flatMode: boolean;
+  ahvAnnual: number;
+}
+
+// ─── Scenario snapshots ───────────────────────────────────────────────────────
+
+export interface SavedScenario {
+  id: number;
+  label: string;
+  color: string;
+  accInputs: AccumulationInputs;
+  decConfig: DecConfig;
+  portfolioAtFire: number;
+  pillarAtFire: number;
+  totalWealthAtFire: number;
+  initialWR: number;
+  longevityYears: number | null;
+  successRate: number | null;
+}
+
+// ─── Monte Carlo ──────────────────────────────────────────────────────────────
+
+export interface MCBand {
+  age: number;
+  p10: number;
+  p25: number;
+  p50: number;
+  p75: number;
+  p90: number;
+}
+
+export interface MCResult {
+  successRate: number;
+  bands: MCBand[];
+  numSims: number;
+}
