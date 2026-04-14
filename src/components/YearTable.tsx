@@ -64,8 +64,8 @@ export function DecumulationTable({ rows }: DecTableProps) {
           <tr>
             <th className="px-4 py-3 text-left font-medium">Year</th>
             <th className="px-4 py-3 text-right font-medium">Age</th>
+            {hasAhv && <th className="px-4 py-3 text-right font-medium">Budget</th>}
             <th className="px-4 py-3 text-right font-medium">Spend</th>
-            {hasAhv && <th className="px-4 py-3 text-right font-medium">Portfolio Draw</th>}
             <th className="px-4 py-3 text-right font-medium">Portfolio Start</th>
             <th className="px-4 py-3 text-right font-medium">Portfolio End</th>
             <th className="px-4 py-3 text-right font-medium">WR %</th>
@@ -77,8 +77,8 @@ export function DecumulationTable({ rows }: DecTableProps) {
             <tr key={r.year} className={`hover:bg-blue-50 transition-colors ${r.note.includes('depleted') ? 'bg-red-50' : r.note !== 'drawing' ? 'bg-emerald-50' : ''}`}>
               <td className="px-4 py-2.5 text-gray-500">{r.year}</td>
               <td className="px-4 py-2.5 text-right font-medium text-gray-800">{r.age}</td>
-              <td className="px-4 py-2.5 text-right text-orange-600">{fmt(r.totalBudget)}</td>
-              {hasAhv && <td className="px-4 py-2.5 text-right text-orange-400">{fmt(r.portfolioDraw)}</td>}
+              {hasAhv && <td className="px-4 py-2.5 text-right text-gray-400">{fmt(r.totalBudget)}</td>}
+              <td className="px-4 py-2.5 text-right text-orange-600">{fmt(r.portfolioDraw)}</td>
               <td className="px-4 py-2.5 text-right text-blue-700">{fmt(r.portfolioStart)}</td>
               <td className="px-4 py-2.5 text-right text-blue-600">{fmt(r.portfolioEnd)}</td>
               <td className="px-4 py-2.5 text-right font-mono">{pct(r.withdrawalRate)}</td>
