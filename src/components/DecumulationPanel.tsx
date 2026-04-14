@@ -59,7 +59,7 @@ export function DecumulationPanel({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     config.annualBudget, config.returnRate, config.inflationRate,
-    config.inflationAdjust, config.flatMode, config.ahvAnnual,
+    config.inflationAdjust, config.flatMode, config.ahvMonthly,
     accResult.portfolioAtFire, accResult.pillarAtFire,
   ]);
 
@@ -81,7 +81,7 @@ export function DecumulationPanel({
         <InputField label="Annual Budget" value={config.annualBudget} onChange={v => set('annualBudget')(v)} prefix="CHF" step={1_000} decimals={0} />
         <InputField label="Portfolio Return (nominal)" value={config.returnRate * 100} onChange={v => set('returnRate')(v / 100)} suffix="%" step={0.1} decimals={1} />
         <InputField label="Inflation Rate" value={config.inflationRate * 100} onChange={v => set('inflationRate')(v / 100)} suffix="%" step={0.1} decimals={1} />
-        <InputField label="AHV / AVS Annual" value={config.ahvAnnual} onChange={v => set('ahvAnnual')(v)} prefix="CHF" step={1_000} decimals={0} />
+        <InputField label="AHV / AVS Monthly" value={config.ahvMonthly} onChange={v => set('ahvMonthly')(v)} prefix="CHF" step={100} decimals={0} />
       </div>
 
       {/* Toggles */}
@@ -99,7 +99,7 @@ export function DecumulationPanel({
           sub={`year ${pillarUnlockYear}`}
           color="purple"
         />
-        {config.ahvAnnual > 0 && (
+        {config.ahvMonthly > 0 && (
           <Card
             label="WR after AHV"
             value={decResult.withdrawalRateAfterAhv !== null ? pct(decResult.withdrawalRateAfterAhv) : '—'}

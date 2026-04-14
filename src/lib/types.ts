@@ -74,7 +74,7 @@ export interface DecConfig {
   inflationRate: number;
   inflationAdjust: boolean;
   flatMode: boolean;
-  ahvAnnual: number;
+  ahvMonthly: number;
 }
 
 // ─── Scenario snapshots ───────────────────────────────────────────────────────

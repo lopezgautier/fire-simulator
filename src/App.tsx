@@ -30,7 +30,7 @@ export default function App() {
     pillarRate: accInputs.pillarRate,
     pillarUnlockYear: accInputs.ageRetirement - accInputs.ageFire,
     ageFire: accInputs.ageFire,
-    ahvAnnual: decConfig.ahvAnnual,
+    ahvAnnual: decConfig.ahvMonthly * 12,
     ahvUnlockYear: Math.max(1, 65 - accInputs.ageFire),
     annualBudget: decConfig.annualBudget,
     returnRate: decConfig.returnRate,
