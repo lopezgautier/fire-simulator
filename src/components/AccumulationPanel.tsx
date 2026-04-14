@@ -40,15 +40,15 @@ export function AccumulationPanel({ onResult }: Props) {
     <div className="flex flex-col gap-6">
       {/* Inputs */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-        <InputField label="Current Age" value={inputs.ageNow} onChange={set('ageNow')} suffix="yrs" />
-        <InputField label="FIRE Age" value={inputs.ageFire} onChange={set('ageFire')} suffix="yrs" />
-        <InputField label="2nd Pillar Unlock Age" value={inputs.ageRetirement} onChange={set('ageRetirement')} suffix="yrs" />
-        <InputField label="Initial Capital" value={inputs.initialCapital} onChange={set('initialCapital')} prefix="CHF" step={10_000} />
-        <InputField label="Yearly Savings" value={inputs.yearlySavings} onChange={set('yearlySavings')} prefix="CHF" step={1_000} />
-        <InputField label="Portfolio Return" value={inputs.returnRate * 100} onChange={v => set('returnRate')(v / 100)} suffix="%" step={0.1} />
-        <InputField label="Initial 2nd Pillar" value={inputs.initialPillar} onChange={set('initialPillar')} prefix="CHF" step={1_000} />
-        <InputField label="Yearly 2nd Pillar Contrib." value={inputs.pillarContribution} onChange={set('pillarContribution')} prefix="CHF" step={100} />
-        <InputField label="2nd Pillar Return" value={inputs.pillarRate * 100} onChange={v => set('pillarRate')(v / 100)} suffix="%" step={0.1} />
+        <InputField label="Current Age" value={inputs.ageNow} onChange={set('ageNow')} suffix="yrs" decimals={0} />
+        <InputField label="FIRE Age" value={inputs.ageFire} onChange={set('ageFire')} suffix="yrs" decimals={0} />
+        <InputField label="2nd Pillar Unlock Age" value={inputs.ageRetirement} onChange={set('ageRetirement')} suffix="yrs" decimals={0} />
+        <InputField label="Initial Capital" value={inputs.initialCapital} onChange={set('initialCapital')} prefix="CHF" step={10_000} decimals={0} />
+        <InputField label="Yearly Savings" value={inputs.yearlySavings} onChange={set('yearlySavings')} prefix="CHF" step={1_000} decimals={0} />
+        <InputField label="Portfolio Return (nominal)" value={inputs.returnRate * 100} onChange={v => set('returnRate')(v / 100)} suffix="%" step={0.1} decimals={1} />
+        <InputField label="Initial 2nd Pillar" value={inputs.initialPillar} onChange={set('initialPillar')} prefix="CHF" step={1_000} decimals={0} />
+        <InputField label="Yearly 2nd Pillar Contrib." value={inputs.pillarContribution} onChange={set('pillarContribution')} prefix="CHF" step={100} decimals={0} />
+        <InputField label="2nd Pillar Return" value={inputs.pillarRate * 100} onChange={v => set('pillarRate')(v / 100)} suffix="%" step={0.1} decimals={1} />
       </div>
 
       {/* Summary cards */}

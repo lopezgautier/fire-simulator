@@ -61,10 +61,10 @@ export function DecumulationPanel({ accResult, accInputs }: Props) {
 
       {/* Inputs */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-        <InputField label="Annual Budget" value={annualBudget} onChange={setAnnualBudget} prefix="CHF" step={1_000} />
-        <InputField label="Portfolio Return" value={returnRate * 100} onChange={v => setReturnRate(v / 100)} suffix="%" step={0.1} />
-        <InputField label="Inflation Rate" value={inflationRate * 100} onChange={v => setInflationRate(v / 100)} suffix="%" step={0.1} />
-        <InputField label="AHV / AVS Annual" value={ahvAnnual} onChange={setAhvAnnual} prefix="CHF" step={1_000} />
+        <InputField label="Annual Budget" value={annualBudget} onChange={setAnnualBudget} prefix="CHF" step={1_000} decimals={0} />
+        <InputField label="Portfolio Return (nominal)" value={returnRate * 100} onChange={v => setReturnRate(v / 100)} suffix="%" step={0.1} decimals={1} />
+        <InputField label="Inflation Rate" value={inflationRate * 100} onChange={v => setInflationRate(v / 100)} suffix="%" step={0.1} decimals={1} />
+        <InputField label="AHV / AVS Annual" value={ahvAnnual} onChange={setAhvAnnual} prefix="CHF" step={1_000} decimals={0} />
       </div>
 
       {/* Toggles */}
