@@ -109,3 +109,35 @@ export interface MCResult {
   bands: MCBand[];
   numSims: number;
 }
+
+// ─── Feature 4: Historical sequences ─────────────────────────────────────────
+
+export interface HistoricalSequence {
+  id: string;
+  label: string;
+  color: string;
+  returns: number[];
+}
+
+export interface HistoricalSimLine {
+  id: string;
+  label: string;
+  color: string;
+  portfolioByAge: { age: number; value: number }[];
+}
+
+// ─── Feature 6: SWR back-solver ──────────────────────────────────────────────
+
+export interface SWRResult {
+  safeBudget: number;
+  safeWR: number;
+  achievedSuccessRate: number;
+}
+
+// ─── Feature 9: Coast FIRE ───────────────────────────────────────────────────
+
+export interface CoastFireResult {
+  coastNumber: number;
+  yearsToCoast: number | null;
+  ageAtCoast: number | null;
+}

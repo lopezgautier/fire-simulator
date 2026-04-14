@@ -4,6 +4,9 @@ import { InputField } from './InputField';
 import { DecumulationTable } from './YearTable';
 import { MonteCarloSection } from './MonteCarloSection';
 import { runMonteCarlo } from '../lib/monte-carlo';
+import { HISTORICAL_SEQUENCES, runHistoricalSim } from '../lib/historical-sequences';
+import { findSafeBudget } from '../lib/swr-backsolver';
+import type { HistoricalSimLine, SWRResult } from '../lib/types';
 import { downloadCsv, decumulationCsv } from '../lib/csv-export';
 
 const fmt = (n: number) =>
@@ -27,6 +30,10 @@ export function DecumulationPanel({
   const [targetAge, setTargetAge] = useState(95);
   const [mcResult, setMcResult] = useState<MCResult | null>(null);
   const [mcRunning, setMcRunning] = useState(false);
+  const [historicalLines, setHistoricalLines] = useState<HistoricalSimLine[]>([]);
+  const [targetSuccessRate, setTargetSuccessRate] = useState(0.90);
+  const [swrResult, setSwrResult] = useState<SWRResult | null>(null);
+  const [swrRunning, setSwrRunning] = useState(false);
 
   const set = <K extends keyof DecConfig>(key: K) => (value: DecConfig[K]) => {
     onConfigChange({ ...config, [key]: value });
@@ -40,13 +47,27 @@ export function DecumulationPanel({
       ? '50+ years (never depleted)'
       : `Year ${decResult.longevityYears} (age ${accInputs.ageFire + decResult.longevityYears})`;
 
+  const handleFindSafeBudget = () => {
+    setSwrRunning(true);
+    setTimeout(() => {
+      const targetYears = targetAge - accInputs.ageFire;
+      const result = findSafeBudget(decInputs, targetSuccessRate, volatility, targetYears);
+      setSwrResult(result);
+      setSwrRunning(false);
+    }, 0);
+  };
+
   const handleRunMC = () => {
     setMcRunning(true);
     // Run async so UI can update to show spinner
     setTimeout(() => {
       const targetYears = targetAge - accInputs.ageFire;
       const result = runMonteCarlo(decInputs, volatility, targetYears, 500);
+      const histLines = HISTORICAL_SEQUENCES.map(seq =>
+        runHistoricalSim(decInputs, seq, targetYears)
+      );
       setMcResult(result);
+      setHistoricalLines(histLines);
       onSuccessRateChange(result.successRate);
       setMcRunning(false);
     }, 0);
@@ -55,6 +76,8 @@ export function DecumulationPanel({
   // Clear MC result when key inputs change
   useEffect(() => {
     setMcResult(null);
+    setHistoricalLines([]);
+    setSwrResult(null);
     onSuccessRateChange(null);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
@@ -150,6 +173,7 @@ export function DecumulationPanel({
             ageFire={accInputs.ageFire}
             pillarUnlockAge={accInputs.ageRetirement}
             ahvUnlockAge={65}
+            historicalLines={historicalLines}
           />
         )}
         {!mcResult && (
@@ -157,6 +181,64 @@ export function DecumulationPanel({
             Set volatility (e.g. 12% for a global equity fund) and target age, then run 500 simulations.
           </p>
         )}
+
+        {/* SWR Back-solver */}
+        <div className="border-t border-gray-100 pt-4 flex flex-col gap-3">
+          <div className="flex items-end gap-3 flex-wrap">
+            <div className="w-44">
+              <InputField
+                label="Target Success Rate"
+                value={targetSuccessRate * 100}
+                onChange={v => { setTargetSuccessRate(v / 100); setSwrResult(null); }}
+                suffix="%"
+                step={5}
+                decimals={0}
+              />
+            </div>
+            <button
+              onClick={handleFindSafeBudget}
+              disabled={swrRunning}
+              className="mb-0.5 px-4 py-2 rounded-lg bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {swrRunning ? 'Solving…' : 'Find Safe Budget'}
+            </button>
+          </div>
+          {swrResult && (() => {
+            const diff = swrResult.safeBudget - config.annualBudget;
+            const noSolution = swrResult.safeBudget === 0;
+            return noSolution ? (
+              <p className="text-xs text-red-500">
+                No budget achieves {(targetSuccessRate * 100).toFixed(0)}% success with these assumptions. Lower the target rate or adjust your portfolio.
+              </p>
+            ) : (
+              <div className="grid grid-cols-3 gap-3">
+                <Card
+                  label={`Safe Budget (${(targetSuccessRate * 100).toFixed(0)}% success)`}
+                  value={fmt(swrResult.safeBudget)}
+                  sub={`${(swrResult.safeWR * 100).toFixed(2)}% WR`}
+                  color="emerald"
+                />
+                <Card
+                  label="vs. Current Budget"
+                  value={(diff >= 0 ? '+' : '') + fmt(diff)}
+                  sub={diff >= 0 ? 'headroom' : 'overspending'}
+                  color={diff >= 0 ? 'emerald' : 'red'}
+                />
+                <Card
+                  label="Achieved Rate"
+                  value={`${(swrResult.achievedSuccessRate * 100).toFixed(0)}%`}
+                  sub={`target: ${(targetSuccessRate * 100).toFixed(0)}%`}
+                  color="purple"
+                />
+              </div>
+            );
+          })()}
+          {!swrResult && (
+            <p className="text-xs text-gray-400">
+              Back-solves the max annual budget that hits your target success rate using the same volatility and horizon above.
+            </p>
+          )}
+        </div>
       </div>
 
       {/* Table + CSV export */}

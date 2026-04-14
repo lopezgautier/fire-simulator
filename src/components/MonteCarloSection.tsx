@@ -2,7 +2,7 @@ import {
   ComposedChart, Area, Line,
   XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine, ResponsiveContainer,
 } from 'recharts';
-import type { MCResult } from '../lib/types';
+import type { MCResult, HistoricalSimLine } from '../lib/types';
 
 interface Props {
   result: MCResult;
@@ -10,27 +10,34 @@ interface Props {
   ageFire: number;
   pillarUnlockAge: number;
   ahvUnlockAge: number;
+  historicalLines?: HistoricalSimLine[];
 }
 
 const fmtChf = (v: number) =>
   v >= 1_000_000 ? `${(v / 1_000_000).toFixed(1)}M` : `${(v / 1_000).toFixed(0)}k`;
 
-export function MonteCarloSection({ result, targetAge, ageFire, pillarUnlockAge, ahvUnlockAge }: Props) {
+export function MonteCarloSection({
+  result, targetAge, ageFire, pillarUnlockAge, ahvUnlockAge, historicalLines = [],
+}: Props) {
   const { successRate, bands, numSims } = result;
 
-  // Transform bands into stacked-area format:
-  // ghost (transparent) sits from 0 → p10, then each colored band stacks on top.
-  const chartData = bands.map(b => ({
-    age: b.age,
-    ghost: b.p10,
-    q1: Math.max(0, b.p25 - b.p10),    // P10–P25: red tint
-    iqr: Math.max(0, b.p75 - b.p25),   // P25–P75: blue tint
-    q3: Math.max(0, b.p90 - b.p75),    // P75–P90: green tint
-    // Absolute reference lines (not stacked)
-    p10ref: b.p10,
-    p50: b.p50,
-    p90ref: b.p90,
-  }));
+  const chartData = bands.map(b => {
+    const entry: Record<string, number> = {
+      age: b.age,
+      ghost: b.p10,
+      q1: Math.max(0, b.p25 - b.p10),
+      iqr: Math.max(0, b.p75 - b.p25),
+      q3: Math.max(0, b.p90 - b.p75),
+      p10ref: b.p10,
+      p50: b.p50,
+      p90ref: b.p90,
+    };
+    for (const hl of historicalLines) {
+      const pt = hl.portfolioByAge.find(p => p.age === b.age);
+      entry[`hist_${hl.id}`] = pt?.value ?? 0;
+    }
+    return entry;
+  });
 
   const last = bands[bands.length - 1];
   const srColor = successRate >= 0.9 ? 'text-emerald-600' : successRate >= 0.75 ? 'text-amber-600' : 'text-red-600';
@@ -64,21 +71,20 @@ export function MonteCarloSection({ result, targetAge, ageFire, pillarUnlockAge,
       </div>
 
       {/* Fan chart */}
-      <p className="text-xs text-gray-400">
-        {numSims} simulations — shaded bands show P10/P25/P75/P90 outcome range
-      </p>
-      <ResponsiveContainer width="100%" height={280}>
+      <ResponsiveContainer width="100%" height={300}>
         <ComposedChart data={chartData} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
           <XAxis dataKey="age" tick={{ fontSize: 11 }}
             label={{ value: 'Age', position: 'insideBottomRight', offset: -4, fontSize: 11 }} />
           <YAxis tickFormatter={fmtChf} tick={{ fontSize: 11 }} width={52} />
           <Tooltip
-            formatter={(value) =>
-              typeof value === 'number'
-                ? value.toLocaleString('fr-CH', { style: 'currency', currency: 'CHF', maximumFractionDigits: 0 })
-                : value
-            }
+            formatter={(value, name) => {
+              if (typeof value !== 'number') return [value, name];
+              const chf = value.toLocaleString('fr-CH', { style: 'currency', currency: 'CHF', maximumFractionDigits: 0 });
+              // Resolve display name for historical lines
+              const hl = historicalLines.find(h => `hist_${h.id}` === name);
+              return [chf, hl ? hl.label : name];
+            }}
             labelFormatter={(label) => `Age ${label}`}
           />
 
@@ -89,7 +95,7 @@ export function MonteCarloSection({ result, targetAge, ageFire, pillarUnlockAge,
               label={{ value: 'AHV', fontSize: 10, fill: '#10b981' }} />
           )}
 
-          {/* Stacked area bands — ghost is transparent to push bands up to p10 */}
+          {/* Stacked area bands */}
           <Area type="monotone" dataKey="ghost" stackId="mc"
             fill="transparent" stroke="none" legendType="none" />
           <Area type="monotone" dataKey="q1" stackId="mc"
@@ -99,15 +105,40 @@ export function MonteCarloSection({ result, targetAge, ageFire, pillarUnlockAge,
           <Area type="monotone" dataKey="q3" stackId="mc"
             fill="#bbf7d0" stroke="none" fillOpacity={0.5} legendType="none" />
 
-          {/* P10, P50, P90 reference lines */}
+          {/* P10, P50, P90 lines */}
           <Line type="monotone" dataKey="p10ref" stroke="#ef4444" strokeWidth={1}
             strokeDasharray="3 2" dot={false} name="P10 (worst 10%)" />
           <Line type="monotone" dataKey="p50" stroke="#3b82f6" strokeWidth={2}
             dot={false} name="Median (P50)" />
           <Line type="monotone" dataKey="p90ref" stroke="#10b981" strokeWidth={1}
             strokeDasharray="3 2" dot={false} name="P90 (best 10%)" />
+
+          {/* Historical sequence lines */}
+          {historicalLines.map(hl => (
+            <Line
+              key={hl.id}
+              type="monotone"
+              dataKey={`hist_${hl.id}`}
+              stroke={hl.color}
+              strokeWidth={1.5}
+              strokeDasharray="5 3"
+              dot={false}
+              name={hl.label}
+            />
+          ))}
         </ComposedChart>
       </ResponsiveContainer>
+
+      {/* Legend */}
+      <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-gray-500">
+        <span>{numSims} simulations — bands P10/P25/P75/P90</span>
+        {historicalLines.map(hl => (
+          <span key={hl.id} className="flex items-center gap-1">
+            <span className="inline-block w-5 border-t-2 border-dashed" style={{ borderColor: hl.color }} />
+            {hl.label}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }

@@ -2,6 +2,7 @@ import type { AccumulationInputs, AccumulationResult } from '../lib/types';
 import { InputField } from './InputField';
 import { AccumulationTable } from './YearTable';
 import { downloadCsv, accumulationCsv } from '../lib/csv-export';
+import { computeCoastFire } from '../lib/coast-fire';
 
 const fmt = (n: number) =>
   n.toLocaleString('fr-CH', { style: 'currency', currency: 'CHF', maximumFractionDigits: 0 });
@@ -18,6 +19,8 @@ export function AccumulationPanel({ inputs, onInputsChange, result }: Props) {
   };
 
   const horizon = inputs.ageFire - inputs.ageNow;
+  const coast = computeCoastFire(inputs, result);
+  const alreadyCoasting = inputs.initialCapital >= coast.coastNumber;
 
   return (
     <div className="flex flex-col gap-6">
@@ -40,6 +43,43 @@ export function AccumulationPanel({ inputs, onInputsChange, result }: Props) {
         <Card label="Portfolio at FIRE" value={fmt(result.portfolioAtFire)} color="blue" />
         <Card label="2nd Pillar at FIRE" value={fmt(result.pillarAtFire)} sub="locked until retirement" color="purple" />
         <Card label="Total Wealth at FIRE" value={fmt(result.totalWealthAtFire)} color="emerald" />
+      </div>
+
+      {/* Coast FIRE */}
+      <div className="border border-sky-100 rounded-xl p-4 bg-sky-50 flex flex-col gap-3">
+        <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Coast FIRE</h3>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <Card
+            label="Coast Number"
+            value={fmt(coast.coastNumber)}
+            sub="stop contributions, coast to FIRE"
+            color="blue"
+          />
+          <Card
+            label="Current Portfolio"
+            value={fmt(inputs.initialCapital)}
+            sub={alreadyCoasting ? 'already coasting!' : `${fmt(coast.coastNumber - inputs.initialCapital)} to go`}
+            color={alreadyCoasting ? 'emerald' : 'blue'}
+          />
+          <Card
+            label="Years to Coast"
+            value={
+              coast.yearsToCoast === null
+                ? 'Never'
+                : coast.yearsToCoast === 0
+                  ? 'Now'
+                  : `${coast.yearsToCoast} yrs`
+            }
+            sub={coast.ageAtCoast !== null && coast.yearsToCoast !== 0 ? `Age ${coast.ageAtCoast}` : undefined}
+            color={coast.yearsToCoast === null ? 'red' : alreadyCoasting ? 'emerald' : 'blue'}
+          />
+          <Card
+            label="Target at FIRE"
+            value={fmt(result.portfolioAtFire)}
+            sub={`age ${inputs.ageFire} (portfolio only)`}
+            color="emerald"
+          />
+        </div>
       </div>
 
       {/* Table + CSV export */}
@@ -67,19 +107,21 @@ interface CardProps {
   label: string;
   value: string;
   sub?: string;
-  color: 'blue' | 'purple' | 'emerald';
+  color: 'blue' | 'purple' | 'emerald' | 'red';
 }
 
 const colors = {
   blue: 'bg-blue-50 border-blue-100',
   purple: 'bg-purple-50 border-purple-100',
   emerald: 'bg-emerald-50 border-emerald-100',
+  red: 'bg-red-50 border-red-100',
 };
 
 const valueColors = {
   blue: 'text-blue-700',
   purple: 'text-purple-700',
   emerald: 'text-emerald-700',
+  red: 'text-red-700',
 };
 
 function Card({ label, value, sub, color }: CardProps) {
