@@ -37,8 +37,8 @@ export function PortfolioChart({ accRows, decRows, fireAge, pillarUnlockAge, ahv
   const decData = decRows.map(r => ({
     age: r.age,
     portfolio: Math.round(r.portfolioEnd),
-    pillar: 0,
-    totalWealth: Math.round(r.portfolioEnd),
+    pillar: Math.round(r.lockedPillar),   // locked 2P still shown until unlock
+    totalWealth: Math.round(r.totalWealth), // portfolioEnd + lockedPillar
     phase: 'dec' as const,
   }));
 

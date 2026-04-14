@@ -34,7 +34,8 @@ export default function App() {
   // Chart preview uses a fixed decumulation baseline so the chart always renders
   const previewDecResult = simulateDecumulation({
     startingPortfolio: accResult.portfolioAtFire,
-    pillarLumpSum: accResult.pillarAtFire,
+    pillarAtFire: accResult.pillarAtFire,
+    pillarRate: accInputs.pillarRate,
     pillarUnlockYear: accInputs.ageRetirement - accInputs.ageFire,
     ageFire: accInputs.ageFire,
     ahvAnnual: 0,

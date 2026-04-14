@@ -3,7 +3,8 @@ import type { DecumulationInputs, DecumulationResult, DecumulationRow } from './
 export function simulateDecumulation(inputs: DecumulationInputs): DecumulationResult {
   const {
     startingPortfolio,
-    pillarLumpSum,
+    pillarAtFire,
+    pillarRate,
     pillarUnlockYear,
     ageFire,
     ahvAnnual,
@@ -22,8 +23,11 @@ export function simulateDecumulation(inputs: DecumulationInputs): DecumulationRe
   const rows: DecumulationRow[] = [];
   let portfolio = startingPortfolio;
   let budget = annualBudget;
-  let longevityYears: number | null = null;
 
+  // Locked pillar keeps earning BVG interest after FIRE (no more contributions)
+  let lockedPillar = pillarAtFire;
+
+  let longevityYears: number | null = null;
   let initialWithdrawalRate: number | null = null;
   let withdrawalRateAfterPillar: number | null = null;
   let withdrawalRateAfterAhv: number | null = null;
@@ -31,27 +35,30 @@ export function simulateDecumulation(inputs: DecumulationInputs): DecumulationRe
   for (let y = 1; y <= maxYears; y++) {
     if (portfolio <= 0) break;
 
-    // End-of-year age: FIRE at 49, year 1 ends at age 50, year 16 ends at age 65
     const age = ageFire + y;
     const notes: string[] = [];
 
-    // Add lump sums before computing portfolioStart so WR reflects true balance
-    if (y === pillarUnlockYear && pillarLumpSum > 0) {
-      portfolio += pillarLumpSum;
+    // Pillar grows at BVG rate while locked, then merges into portfolio at unlock
+    if (y < pillarUnlockYear) {
+      lockedPillar = lockedPillar * (1 + pillarRate);
+    } else if (y === pillarUnlockYear) {
+      lockedPillar = lockedPillar * (1 + pillarRate); // final year of growth
+      portfolio += lockedPillar;
+      lockedPillar = 0;
       notes.push('2P unlocked');
     }
+    // after unlock: lockedPillar stays 0
+
     if (ahvAnnual > 0 && y === ahvUnlockYear) {
       notes.push('AHV starts');
     }
 
-    // portfolioStart captured AFTER lump sums, BEFORE growth/withdrawal
+    // portfolioStart after lump sum added, before growth/withdrawal — denominator for WR
     const portfolioStart = portfolio;
 
-    // AHV offsets the portfolio draw; total lifestyle spend stays at `budget`
     const ahvOffset = ahvAnnual > 0 && y >= ahvUnlockYear ? ahvAnnual : 0;
     const portfolioDraw = Math.max(0, budget - ahvOffset);
 
-    // Grow portfolio then subtract draw (end-of-year withdrawal)
     portfolio = portfolio * (1 + effectiveReturn) - portfolioDraw;
 
     const wr = portfolioStart > 0 ? portfolioDraw / portfolioStart : 0;
@@ -61,6 +68,7 @@ export function simulateDecumulation(inputs: DecumulationInputs): DecumulationRe
     if (ahvAnnual > 0 && y === ahvUnlockYear) withdrawalRateAfterAhv = wr;
 
     let note = notes.length > 0 ? notes.join(' + ') : 'drawing';
+    const portfolioEnd = Math.max(0, portfolio);
     if (portfolio <= 0) {
       note = 'depleted';
       longevityYears = y;
@@ -72,7 +80,9 @@ export function simulateDecumulation(inputs: DecumulationInputs): DecumulationRe
       totalBudget: budget,
       portfolioDraw,
       portfolioStart,
-      portfolioEnd: Math.max(0, portfolio),
+      portfolioEnd,
+      lockedPillar,
+      totalWealth: portfolioEnd + lockedPillar,
       withdrawalRate: wr,
       note,
     });

@@ -29,12 +29,13 @@ export interface AccumulationResult {
 
 export interface DecumulationInputs {
   startingPortfolio: number;    // fed from Phase 1
-  pillarLumpSum: number;        // fed from Phase 1
-  pillarUnlockYear: number;     // ageFire to ageRetirement delta, e.g. 16
+  pillarAtFire: number;         // fed from Phase 1 — grows at pillarRate until unlock
+  pillarRate: number;           // fed from Phase 1 — BVG rate continues on locked balance
+  pillarUnlockYear: number;     // ageRetirement - ageFire, e.g. 16
   ageFire: number;
   // AHV/AVS
   ahvAnnual: number;            // CHF/year, 0 if not modeled
-  ahvUnlockYear: number;        // ageFire to 65 delta
+  ahvUnlockYear: number;        // 65 - ageFire
   // Spend & rates
   annualBudget: number;         // CHF/year (initial)
   returnRate: number;           // e.g. 0.04
@@ -51,6 +52,8 @@ export interface DecumulationRow {
   portfolioDraw: number;     // actual draw from portfolio (totalBudget - ahvOffset)
   portfolioStart: number;    // portfolio after lump sums added, before growth/withdrawal
   portfolioEnd: number;
+  lockedPillar: number;      // 2P balance still locked (0 after unlock year)
+  totalWealth: number;       // portfolioEnd + lockedPillar
   withdrawalRate: number;    // portfolioDraw / portfolioStart
   note: string;              // "drawing" | "2P unlocked" | "AHV starts" | "depleted"
 }

@@ -26,7 +26,8 @@ export function DecumulationPanel({ accResult, accInputs }: Props) {
 
   const decInputs: DecumulationInputs = {
     startingPortfolio: accResult.portfolioAtFire,
-    pillarLumpSum: accResult.pillarAtFire,
+    pillarAtFire: accResult.pillarAtFire,
+    pillarRate: accInputs.pillarRate,
     pillarUnlockYear,
     ageFire: accInputs.ageFire,
     ahvAnnual,
