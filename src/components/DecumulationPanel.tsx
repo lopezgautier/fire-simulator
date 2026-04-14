@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react';
-import type { AccumulationResult, AccumulationInputs, DecumulationInputs, DecConfig, MCResult } from '../lib/types';
+import type { AccumulationResult, AccumulationInputs, DecumulationInputs, DecConfig, MCResult, SWRResult } from '../lib/types';
 import { InputField } from './InputField';
 import { DecumulationTable } from './YearTable';
 import { MonteCarloSection } from './MonteCarloSection';
 import { runMonteCarlo } from '../lib/monte-carlo';
 import { HISTORICAL_SEQUENCES, runHistoricalSim } from '../lib/historical-sequences';
 import { findSafeBudget } from '../lib/swr-backsolver';
-import type { HistoricalSimLine, SWRResult } from '../lib/types';
+import type { HistoricalSimLine } from '../lib/types';
 import { downloadCsv, decumulationCsv } from '../lib/csv-export';
 import { InfoTooltip } from './InfoTooltip';
+import { StatCard } from './AccumulationPanel';
 
 const fmt = (n: number) =>
   n.toLocaleString('fr-CH', { style: 'currency', currency: 'CHF', maximumFractionDigits: 0 });
@@ -45,7 +46,7 @@ export function DecumulationPanel({
 
   const longevityLabel =
     decResult.longevityYears === null
-      ? '50+ years (never depleted)'
+      ? '50+ yrs (never depleted)'
       : `Year ${decResult.longevityYears} (age ${accInputs.ageFire + decResult.longevityYears})`;
 
   const handleFindSafeBudget = () => {
@@ -60,13 +61,10 @@ export function DecumulationPanel({
 
   const handleRunMC = () => {
     setMcRunning(true);
-    // Run async so UI can update to show spinner
     setTimeout(() => {
       const targetYears = targetAge - accInputs.ageFire;
       const result = runMonteCarlo(decInputs, volatility, targetYears, 500);
-      const histLines = HISTORICAL_SEQUENCES.map(seq =>
-        runHistoricalSim(decInputs, seq, targetYears)
-      );
+      const histLines = HISTORICAL_SEQUENCES.map(seq => runHistoricalSim(decInputs, seq, targetYears));
       setMcResult(result);
       setHistoricalLines(histLines);
       onSuccessRateChange(result.successRate);
@@ -74,7 +72,6 @@ export function DecumulationPanel({
     }, 0);
   };
 
-  // Clear MC result when key inputs change
   useEffect(() => {
     setMcResult(null);
     setHistoricalLines([]);
@@ -90,8 +87,8 @@ export function DecumulationPanel({
   return (
     <div className="flex flex-col gap-6">
       {/* Fed from Phase 1 */}
-      <div className="rounded-xl border border-amber-100 bg-amber-50 p-4">
-        <div className="text-xs font-medium text-amber-700 uppercase tracking-wide mb-2">Fed from Phase 1</div>
+      <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+        <div className="text-xs font-semibold text-amber-700 uppercase tracking-wide mb-2">Fed from Phase 1</div>
         <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-sm sm:grid-cols-4">
           <Stat label="Starting portfolio" value={fmt(accResult.portfolioAtFire)} />
           <Stat label="2nd pillar lump sum" value={fmt(accResult.pillarAtFire)} />
@@ -110,46 +107,46 @@ export function DecumulationPanel({
       </div>
 
       {/* Toggles */}
-      <div className="flex gap-6">
+      <div className="flex gap-6 flex-wrap">
         <Toggle label="Inflation-adjust budget" checked={config.inflationAdjust} onChange={v => set('inflationAdjust')(v)} />
-        <Toggle label="Flat / no-growth mode (0% return, 0% inflation)" checked={config.flatMode} onChange={v => set('flatMode')(v)} />
+        <Toggle label="Flat / no-growth mode" checked={config.flatMode} onChange={v => set('flatMode')(v)} />
       </div>
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <CardWithTooltip
+        <StatCard
           label="Initial WR"
-          tooltip="Withdrawal Rate: the share of your portfolio drawn in year 1 of retirement. Calculated as portfolio draw ÷ start-of-year portfolio value. A common rule of thumb targets ≤ 4%."
           value={pct(decResult.initialWithdrawalRate)}
-          color="orange"
+          accent="orange"
+          tooltip="Withdrawal Rate: the share of your portfolio drawn in year 1. Calculated as portfolio draw ÷ start-of-year portfolio value. A common FIRE target is ≤ 4%."
         />
-        <Card
+        <StatCard
           label="WR after 2P unlock"
           value={decResult.withdrawalRateAfterPillar !== null ? pct(decResult.withdrawalRateAfterPillar) : '—'}
           sub={`year ${pillarUnlockYear}`}
-          color="purple"
+          accent="violet"
         />
         {config.ahvMonthly > 0 && (
-          <Card
+          <StatCard
             label="WR after AHV"
             value={decResult.withdrawalRateAfterAhv !== null ? pct(decResult.withdrawalRateAfterAhv) : '—'}
             sub={`year ${Math.max(1, ahvUnlockYear)}`}
-            color="emerald"
+            accent="emerald"
           />
         )}
-        <Card
+        <StatCard
           label="Portfolio longevity"
           value={longevityLabel}
-          color={decResult.longevityYears === null ? 'emerald' : 'red'}
+          accent={decResult.longevityYears === null ? 'emerald' : 'red'}
         />
       </div>
 
       {/* Monte Carlo stress test */}
       <div className="border border-gray-200 rounded-xl p-4 flex flex-col gap-4">
         <div className="flex items-center justify-between flex-wrap gap-3">
-          <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide flex items-center">
+          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide flex items-center">
             Monte Carlo Stress Test
-            <InfoTooltip text="Runs 500 simulations where each year's portfolio return is drawn randomly from a normal distribution centred on your expected return, with the volatility (σ) you set. The spread of outcomes shows how much sequence-of-returns risk affects your plan." />
+            <InfoTooltip text="Runs 500 simulations where each year's portfolio return is drawn randomly from a normal distribution centred on your expected return with the volatility (σ) you set. Shows how sequence-of-returns risk affects your plan." />
           </h3>
           <button
             onClick={handleRunMC}
@@ -160,22 +157,10 @@ export function DecumulationPanel({
           </button>
         </div>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-          <InputField
-            label="Return Volatility (σ)"
-            value={volatility * 100}
-            onChange={v => setVolatility(v / 100)}
-            suffix="%"
-            step={0.5}
-            decimals={1}
-          />
-          <InputField
-            label="Target Age"
-            value={targetAge}
-            onChange={setTargetAge}
-            suffix="yrs"
-            decimals={0}
-          />
+          <InputField label="Return Volatility (σ)" value={volatility * 100} onChange={v => setVolatility(v / 100)} suffix="%" step={0.5} decimals={1} />
+          <InputField label="Target Age" value={targetAge} onChange={setTargetAge} suffix="yrs" decimals={0} />
         </div>
+
         {mcResult && (
           <MonteCarloSection
             result={mcResult}
@@ -194,9 +179,9 @@ export function DecumulationPanel({
 
         {/* SWR Back-solver */}
         <div className="border-t border-gray-100 pt-4 flex flex-col gap-3">
-          <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide flex items-center">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide flex items-center">
             Safe Withdrawal Rate Solver
-            <InfoTooltip text="Binary-searches the highest annual budget that still achieves your target success rate, using the same volatility and horizon as the stress test above. The result is read-only — it does not change your budget input." />
+            <InfoTooltip text="Binary-searches the highest annual budget that still achieves your target success rate, using the same volatility and horizon as the stress test above. Read-only — does not change your budget input." />
           </p>
           <div className="flex items-end gap-3 flex-wrap">
             <div className="w-44">
@@ -222,34 +207,34 @@ export function DecumulationPanel({
             const noSolution = swrResult.safeBudget === 0;
             return noSolution ? (
               <p className="text-xs text-red-500">
-                No budget achieves {(targetSuccessRate * 100).toFixed(0)}% success with these assumptions. Lower the target rate or adjust your portfolio.
+                No budget achieves {(targetSuccessRate * 100).toFixed(0)}% success with these assumptions.
               </p>
             ) : (
               <div className="grid grid-cols-3 gap-3">
-                <Card
+                <StatCard
                   label={`Safe Budget (${(targetSuccessRate * 100).toFixed(0)}% success)`}
                   value={fmt(swrResult.safeBudget)}
                   sub={`${(swrResult.safeWR * 100).toFixed(2)}% WR`}
-                  color="emerald"
+                  accent="emerald"
                 />
-                <Card
+                <StatCard
                   label="vs. Current Budget"
                   value={(diff >= 0 ? '+' : '') + fmt(diff)}
                   sub={diff >= 0 ? 'headroom' : 'overspending'}
-                  color={diff >= 0 ? 'emerald' : 'red'}
+                  accent={diff >= 0 ? 'emerald' : 'red'}
                 />
-                <Card
+                <StatCard
                   label="Achieved Rate"
                   value={`${(swrResult.achievedSuccessRate * 100).toFixed(0)}%`}
                   sub={`target: ${(targetSuccessRate * 100).toFixed(0)}%`}
-                  color="purple"
+                  accent="violet"
                 />
               </div>
             );
           })()}
           {!swrResult && (
             <p className="text-xs text-gray-400">
-              Back-solves the max annual budget that hits your target success rate using the same volatility and horizon above.
+              Back-solves the max annual budget that hits your target success rate.
             </p>
           )}
         </div>
@@ -298,48 +283,5 @@ function Toggle({ label, checked, onChange }: { label: string; checked: boolean;
       </button>
       {label}
     </label>
-  );
-}
-
-interface CardProps {
-  label: string;
-  value: string;
-  sub?: string;
-  color: 'orange' | 'purple' | 'emerald' | 'red';
-}
-
-const colors = {
-  orange: 'bg-orange-50 border-orange-100',
-  purple: 'bg-purple-50 border-purple-100',
-  emerald: 'bg-emerald-50 border-emerald-100',
-  red: 'bg-red-50 border-red-100',
-};
-
-const valueColors = {
-  orange: 'text-orange-700',
-  purple: 'text-purple-700',
-  emerald: 'text-emerald-700',
-  red: 'text-red-700',
-};
-
-function Card({ label, value, sub, color }: CardProps) {
-  return (
-    <div className={`rounded-xl border p-4 ${colors[color]}`}>
-      <div className="text-xs text-gray-500 font-medium uppercase tracking-wide mb-1">{label}</div>
-      <div className={`text-lg font-bold ${valueColors[color]}`}>{value}</div>
-      {sub && <div className="text-xs text-gray-400 mt-0.5">{sub}</div>}
-    </div>
-  );
-}
-
-function CardWithTooltip({ label, tooltip, value, sub, color }: CardProps & { tooltip: string }) {
-  return (
-    <div className={`rounded-xl border p-4 ${colors[color]}`}>
-      <div className="text-xs text-gray-500 font-medium uppercase tracking-wide mb-1 flex items-center">
-        {label}<InfoTooltip text={tooltip} />
-      </div>
-      <div className={`text-lg font-bold ${valueColors[color]}`}>{value}</div>
-      {sub && <div className="text-xs text-gray-400 mt-0.5">{sub}</div>}
-    </div>
   );
 }
